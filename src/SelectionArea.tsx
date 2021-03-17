@@ -50,15 +50,20 @@ export default class SelectionArea extends Component<Props, State> {
   selectedChildren: any = {};
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.selectionPoints.startPoint.x !== this.state.startPoint.x) {
+    if (
+      this.props.selectionPoints.startPoint.x !== this.state.startPoint.x ||
+      this.props.selectionPoints.endPoint.x !== this.state.endPoint.x ||
+      this.props.selectionPoints.startPoint.y !== this.state.startPoint.y ||
+      this.props.selectionPoints.endPoint.y !== this.state.endPoint.y
+    ) {
       this.updateSelection(
         this.props.selectionPoints.startPoint,
-        this.props.selectionPoints.endPoint,
+        this.props.selectionPoints.endPoint
       );
-    }
-    if (!_.isNull(this.state.selectionBox)) {
-      this._updateCollidingChildren(this.state.selectionBox);
-      this.props.onSelectionChange.call(null, _.keys(this.selectedChildren));
+      if (!_.isNull(this.state.selectionBox)) {
+        this._updateCollidingChildren(this.state.selectionBox);
+        this.props.onSelectionChange.call(null, _.keys(this.selectedChildren));
+      }
     }
   }
   /**
@@ -130,10 +135,7 @@ export default class SelectionArea extends Component<Props, State> {
     this.setState({
       startPoint,
       endPoint,
-      selectionBox: this._calculateSelectionBox(
-        startPoint,
-        endPoint
-      ),
+      selectionBox: this._calculateSelectionBox(startPoint, endPoint),
     });
   };
   /**
@@ -141,10 +143,10 @@ export default class SelectionArea extends Component<Props, State> {
    */
   render = () => {
     return (
-      <div className="selection" ref="selectionBox">
+      <>
         {this.renderChildren()}
         {this.renderSelectionBox()}
-      </div>
+      </>
     );
   };
 
@@ -152,31 +154,37 @@ export default class SelectionArea extends Component<Props, State> {
    * Render children
    */
   renderChildren = () => {
-    var index = 0;
-    var _this = this;
-    var tmpChild;
-    return React.Children.map(this.props.children, (child) => {
-      var tmpKey = _.isNull((child as any).key) ? index++ : (child as any).key;
-      var isSelected = _.has(_this.selectedChildren, tmpKey);
-      tmpChild = React.cloneElement(child as ReactElement, {
-        ref: tmpKey,
-        selectionparent: _this,
-        isselected: isSelected.toString(),
-      });
-      return React.createElement(
-        "div",
-        {
-          className: "select-box " + (isSelected ? "selected" : ""),
-          onClickCapture: (e) => {
-            // if((e.ctrlKey || e.altKey || e.shiftKey) && _this.props.enabled) {
-            //   e.preventDefault();
-            //   e.stopPropagation();
-            //   _this.selectItem(tmpKey, !_.has(_this.selectedChildren, tmpKey));
-            // }
-          },
-        },
-        tmpChild
+    //.filter(child => types.indexOf(typeOfComponent(child)) !== -1)
+    //let table React.Children.only(this.props.children)
+    let indexRow = -1;
+    let indexCell = 0;
+    let _this = this;
+    let tmpChildCell;
+    return React.Children.map(this.props.children, (childRow: ReactElement) => {
+      indexRow += 1;
+      indexCell = 0;
+      let cells = React.Children.map(childRow.props.children, (childCell: ReactElement) => {
+          var tmpKey = `${indexRow}-${indexCell++}`;
+          var isSelected = _.has(_this.selectedChildren, tmpKey);
+          tmpChildCell = React.cloneElement(childCell, {
+            ref: tmpKey,
+            key: tmpKey,
+            selectionparent: _this,
+            isselected: isSelected.toString(),
+          });
+          return React.createElement(
+            "td",
+            {
+              className: "select-box " + (isSelected ? "selected" : ""),
+            },
+            tmpChildCell
+          );
+        }
       );
+      return React.cloneElement(childRow, { 
+        
+      }, 
+      cells);
     });
   };
 
@@ -244,14 +252,18 @@ export default class SelectionArea extends Component<Props, State> {
     var tmpNode = null;
     var tmpBox = null;
     var _this = this;
+    // let trChildren =  React.Children.toArray((this.props.children as any).props.children.props.children);
+    // let cellsRefs = React.Children.map(trChildren, c => (c as any).props.children);
+    // let cellsRefs = rows.length && Array.from(rows).map((c) => Array.from(c.children)).flat(1);
     _.each(this.refs, function (ref: any, key: any) {
       if (key !== "selectionBox") {
         tmpNode = ReactDOM.findDOMNode(ref);
+        let rect = tmpNode.getBoundingClientRect();
         tmpBox = {
-          top: tmpNode.offsetTop,
-          left: tmpNode.offsetLeft,
+          top: rect.top - 18,
+          left: rect.left,
           width: tmpNode.clientWidth,
-          height: tmpNode.clientHeight
+          height: tmpNode.clientHeight,
         };
         if (_this._boxIntersects(selectionBox, tmpBox)) {
           _this.selectedChildren[key] = true;
@@ -261,6 +273,10 @@ export default class SelectionArea extends Component<Props, State> {
           }
         }
       }
+    });
+    this.setState({
+      ...this.state,
+      selectedItems: this.selectedChildren
     });
   };
 

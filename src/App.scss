@@ -11,13 +11,18 @@
     // display: flex;
     width: 100%;
   }
-  .responsive-table-cell {
+  td {
     border: 1px solid black;
     overflow-wrap: anywhere;
     min-width: 10px;
     min-height: 25px;
     height: 25px;
   }
+}
+
+.responsive-table-cell {
+  width: 100%;
+  height: 100%;
 }
 
 .responsive-text-box {
@@ -39,7 +44,6 @@
   }
 }
 
-.select-box { 
-  display: table;
-  width: 100%;
+.select-box.selected { 
+  background-color: cadetblue;
 }

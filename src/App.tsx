@@ -24,8 +24,8 @@ export default class App extends Component<{}, State> {
   boxes: { text: string }[] = [];
 
   selectionPointsTemp: Area = {
-    startPoint: { x: 0, y: 5 },
-    endPoint: { x: 900, y: 700 },
+    startPoint: { x: 0, y: 50 },
+    endPoint: { x: 1100, y: 700 },
   };
   selectedChildren: string[];
 
@@ -36,8 +36,8 @@ export default class App extends Component<{}, State> {
       boxes: [],
       parsedTable: null,
       selectionPointsToCrop: {
-        startPoint: { x: 0, y: 5 },
-        endPoint: { x: 900, y: 700 },
+        startPoint: { x: 0, y: 50 },
+        endPoint: { x: 1100, y: 700 },
       },
     };
   }
@@ -68,8 +68,15 @@ export default class App extends Component<{}, State> {
   deleteSelection = () => {
     let tempTable = [];
     for (let i = 0; i < this.parsedTable.data.length; i++) {
-      if (!this.selectedChildren.includes(i.toString())) {
-        tempTable.push(this.parsedTable.data[i]);
+      let rowItems = [];
+      for (let k = 0; k < (this.parsedTable.data[i] as Array<string>).length; k++) {
+        if (!this.selectedChildren.includes(`${i}-${k}`)) {
+          rowItems.push(this.parsedTable.data[i][k]);
+        }
+      }
+
+      if (rowItems.length) {
+        tempTable.push(rowItems);
       }
     }
     this.parsedTable.data = tempTable;
@@ -89,12 +96,12 @@ export default class App extends Component<{}, State> {
       return (
         <tr key={indexRow} className="responsive-table-row">
           {(row as Array<string>).map((cell, indexCell) => (
-            <td
+            <div
               className="responsive-table-cell"
               key={`${indexRow}-${indexCell}`}
             >
               {cell}
-            </td>
+            </div>
           ))}
         </tr>
       );
