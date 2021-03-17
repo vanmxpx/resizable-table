@@ -8,17 +8,21 @@
 .responsive-table {
   border-right: solid 2px lightseagreen;
   .responsive-table-row {
+    // display: flex;
     width: 100%;
   }
   .responsive-table-cell {
     border: 1px solid black;
     overflow-wrap: anywhere;
+    min-width: 10px;
+    min-height: 25px;
+    height: 25px;
   }
 }
 
 .responsive-text-box {
   background-color: azure;
-  border: "1px solid red";
+  border: 1px solid gray;
 }
 
 .selectionBorder { 
@@ -33,4 +37,9 @@
     width: 100%;
     height: 3px;
   }
+}
+
+.select-box { 
+  display: table;
+  width: 100%;
 }

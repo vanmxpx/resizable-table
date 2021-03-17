@@ -6,7 +6,6 @@ import Papa, { ParseResult } from "papaparse";
 import { observable } from "mobx";
 import { Rnd } from "react-rnd";
 import SelectionArea from "./SelectionArea";
-import { Point } from "./point";
 import { Area } from "./area";
 import _ from "lodash";
 
@@ -25,10 +24,10 @@ export default class App extends Component<{}, State> {
   boxes: { text: string }[] = [];
 
   selectionPointsTemp: Area = {
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 0, y: 0 },
+    startPoint: { x: 0, y: 5 },
+    endPoint: { x: 900, y: 700 },
   };
-  selectedChildren: any;
+  selectedChildren: string[];
 
   constructor(props) {
     super(props);
@@ -37,8 +36,8 @@ export default class App extends Component<{}, State> {
       boxes: [],
       parsedTable: null,
       selectionPointsToCrop: {
-        startPoint: { x: 0, y: 0 },
-        endPoint: { x: 700, y: 700 },
+        startPoint: { x: 0, y: 5 },
+        endPoint: { x: 900, y: 700 },
       },
     };
   }
@@ -67,9 +66,13 @@ export default class App extends Component<{}, State> {
   };
 
   deleteSelection = () => {
-    for (const key  of this.selectedChildren) {
-      this.parsedTable.data.splice(+key, 1);
+    let tempTable = [];
+    for (let i = 0; i < this.parsedTable.data.length; i++) {
+      if (!this.selectedChildren.includes(i.toString())) {
+        tempTable.push(this.parsedTable.data[i]);
+      }
     }
+    this.parsedTable.data = tempTable;
     this.setState({ ...this.state, parsedTable: this.parsedTable });
   };
 
@@ -134,7 +137,7 @@ export default class App extends Component<{}, State> {
           }}
           default={{
             x: 0,
-            y: 0,
+            y: 50,
             width: "100%",
             height: "5px",
           }}
@@ -147,7 +150,7 @@ export default class App extends Component<{}, State> {
             this.selectionPointsTemp.endPoint.x = d.x;
           }}
           default={{
-            x: 900,
+            x: 1100,
             y: 0,
             width: "5px",
             height: "100%",
@@ -162,7 +165,7 @@ export default class App extends Component<{}, State> {
           }}
           default={{
             x: 0,
-            y: 900,
+            y: 700,
             width: "100%",
             height: "5px",
           }}
