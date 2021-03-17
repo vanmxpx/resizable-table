@@ -1,19 +1,48 @@
-import React, { ChangeEvent, ChangeEventHandler, Component, MouseEventHandler } from "react";
-import logo from "./logo.svg";
-import "./App.css";
+import React, { ChangeEvent, Component } from "react";
+import "./App.scss";
 import classNames from "classnames";
 import { observer } from "mobx-react";
 import Papa, { ParseResult } from "papaparse";
 import { observable } from "mobx";
 import { Rnd } from "react-rnd";
+import SelectionArea from "./SelectionArea";
+import { Point } from "./point";
+import { Area } from "./area";
+import _ from "lodash";
+
+interface State {
+  selectionPointsToCrop: Area;
+  parsedTable: ParseResult<unknown> | null;
+  boxes: { text: string }[];
+}
 
 @observer
-export default class App extends Component {
+export default class App extends Component<{}, State> {
   @observable
   parsedTable: ParseResult<unknown> | null = null;
 
+  @observable
   boxes: { text: string }[] = [];
-  componentDidMount() {}
+
+  selectionPointsTemp: Area = {
+    startPoint: { x: 0, y: 0 },
+    endPoint: { x: 0, y: 0 },
+  };
+  selectedChildren: any;
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      boxes: [],
+      parsedTable: null,
+      selectionPointsToCrop: {
+        startPoint: { x: 0, y: 0 },
+        endPoint: { x: 700, y: 700 },
+      },
+    };
+  }
+
   loadFile = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.currentTarget.files) return;
 
@@ -22,7 +51,7 @@ export default class App extends Component {
     Papa.parse(file, {
       complete: (parsedOutput) => {
         this.parsedTable = parsedOutput;
-        this.setState({...this.state, parsedTable: this.parsedTable });
+        this.setState({ ...this.state, parsedTable: this.parsedTable });
         console.log(this.parsedTable);
       },
     });
@@ -30,16 +59,39 @@ export default class App extends Component {
 
   addBox = () => {
     this.boxes.push({ text: "test" });
-    this.setState({...this.state, boxes: this.boxes });
+    this.setState({ ...this.state, boxes: this.boxes });
+  };
+
+  setSelectedItems = (values: string[]) => {
+    this.selectedChildren = values;
+  };
+
+  deleteSelection = () => {
+    for (const key  of this.selectedChildren) {
+      this.parsedTable.data.splice(+key, 1);
+    }
+    this.setState({ ...this.state, parsedTable: this.parsedTable });
+  };
+
+  showSelection = () => {
+    this.setState({
+      ...this.state,
+      selectionPointsToCrop: _.cloneDeep(this.selectionPointsTemp),
+    });
   };
 
   renderTableData() {
     if (!this.parsedTable) return <></>;
-    let test = this.parsedTable.data.map((row, index) => {
+    let test = this.parsedTable.data.map((row, indexRow) => {
       return (
-        <tr key={index}>
-          {(row as Array<string>).map((cell, index) => (
-            <td key={index}>{cell}</td>
+        <tr key={indexRow} className="responsive-table-row">
+          {(row as Array<string>).map((cell, indexCell) => (
+            <td
+              className="responsive-table-cell"
+              key={`${indexRow}-${indexCell}`}
+            >
+              {cell}
+            </td>
           ))}
         </tr>
       );
@@ -52,7 +104,8 @@ export default class App extends Component {
       return (
         <Rnd
           key={index}
-          style={{ zIndex: index, backgroundColor: "azure", border: "1px solid red" }}
+          className="responsive-text-box"
+          style={{ zIndex: index }}
           default={{
             x: 0,
             y: 0,
@@ -69,25 +122,84 @@ export default class App extends Component {
   render() {
     return (
       <div className="App">
-        <div className="">
+        <div className="appWrapper">
           <input type="file" accept=".csv" onChange={this.loadFile} />
-          <button onClick={this.addBox}>Add text</button>
+          <button onClick={this.addBox}>Add text box</button>
+          <button onClick={this.showSelection}>Show selection</button>
+          <button onClick={this.deleteSelection}>Delete selection</button>
         </div>
-        <div className={classNames("border", "top")}></div>
-        <div className={classNames("border", "right")}></div>
-        <div className={classNames("border", "bottom")}></div>
-        <div className={classNames("border", "left")}></div>
+        <Rnd
+          onDragStop={(e, d) => {
+            this.selectionPointsTemp.startPoint.y = d.y;
+          }}
+          default={{
+            x: 0,
+            y: 0,
+            width: "100%",
+            height: "5px",
+          }}
+          dragAxis="y"
+          enableResizing={false}
+          className={classNames("selectionBorder", "top")}
+        ></Rnd>
+        <Rnd
+          onDragStop={(e, d) => {
+            this.selectionPointsTemp.endPoint.x = d.x;
+          }}
+          default={{
+            x: 900,
+            y: 0,
+            width: "5px",
+            height: "100%",
+          }}
+          dragAxis="x"
+          enableResizing={false}
+          className={classNames("selectionBorder", "right")}
+        ></Rnd>
+        <Rnd
+          onDragStop={(e, d) => {
+            this.selectionPointsTemp.endPoint.y = d.y;
+          }}
+          default={{
+            x: 0,
+            y: 900,
+            width: "100%",
+            height: "5px",
+          }}
+          dragAxis="y"
+          enableResizing={false}
+          className={classNames("selectionBorder", "bottom")}
+        ></Rnd>
+        <Rnd
+          onDragStop={(e, d) => {
+            this.selectionPointsTemp.startPoint.x = d.x;
+          }}
+          default={{
+            x: 0,
+            y: 0,
+            width: "5px",
+            height: "100%",
+          }}
+          dragAxis="x"
+          enableResizing={false}
+          className={classNames("selectionBorder", "left")}
+        ></Rnd>
         <div>
           <Rnd disableDragging={true}>
-            test
-            <table className="example-table">
-              <tbody>{this.renderTableData()}</tbody>
+            <table className="responsive-table">
+              <tbody className="responsive-table-body">
+                <SelectionArea
+                  showSelection={true}
+                  onSelectionChange={this.setSelectedItems}
+                  selectionPoints={this.state.selectionPointsToCrop}
+                >
+                  {this.renderTableData()}
+                </SelectionArea>
+              </tbody>
             </table>
           </Rnd>
         </div>
-        <div>
-          {this.renderBoxes()}
-        </div>
+        <div>{this.renderBoxes()}</div>
       </div>
     );
   }
